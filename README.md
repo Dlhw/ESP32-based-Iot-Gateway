@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project demonstrates an ESP32-based IoT application that integrates Wi-Fi, Bluetooth, MQTT communication, an LCD display, and a potentiometer as a replacement for sensor readings. The ESP32 connects to a Wi-Fi network, scans for available networks, communicates with an MQTT broker, and allows control of on-board LED via Bluetooth.
+This project demonstrates an ESP32-based IoT application that integrates Wi-Fi, Bluetooth, MQTT communication, a LCD display, and a potentiometer as a replacement for sensor readings. The ESP32 connects to a Wi-Fi network, scans for available networks, communicates with an MQTT broker, and allows control of on-board LED via Bluetooth.
 
 ## Features
 
