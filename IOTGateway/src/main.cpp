@@ -42,13 +42,40 @@ char incomingChar;
 const int potPin = 34;
 int potValue = 0;
 
+// Custom Characters:
+
+byte Disconnected[8] = {
+  0b11111, //0
+  0b11111, //1
+  0b01110, //2
+  0b00000, //3
+  0b00000, //4
+  0b01110, //5
+  0b11111, //6
+  0b11111, //7
+};
+
+byte Connected[8] = {
+  0b11111, //0
+  0b11111, //1
+  0b01110, //2
+  0b00100, //3
+  0b00100, //4
+  0b01110, //5
+  0b11111, //6
+  0b11111, //7
+};
+
+
 WiFiClientSecure espClient ;
 PubSubClient client(espClient);
 
 void lcdSetup(){
-  lcd.init(); // initialise object
+  lcd.init(); // initialise LCD hardware
   lcd.clear(); // clears lcd and move cursor to (0,0)
   lcd.backlight(); // Make sure backlight is on
+  lcd.createChar(0, Disconnected); // Custom characters for showing Bluetooth disconnected
+  lcd.createChar(1, Connected); // Custom characters for showing Bluetooth connected
   // optional functions
   // lcd.home();// moves to (0,0) without clearing 
   // lcd.blink(); //displays blinking cursor at next char to be written
@@ -76,12 +103,17 @@ void callback(char* topic, byte* message, unsigned int length){
     if(messageTemp == "on"){
       Serial.println("on");
       digitalWrite(ledPin,HIGH);
+      lcd.setCursor(10,1);
+      lcd.print("      "); // clear the last 6 chars
+      lcd.setCursor(10,1);
+      lcd.print("ON");
     }
     else if (messageTemp=="off"){
       Serial.println("off");
       digitalWrite(ledPin,LOW);
+      lcd.setCursor(10,1);
+      lcd.print("OFF");
     }
-
   }
 }
 
@@ -179,14 +211,14 @@ void setup() {
   pinMode(ledPin,OUTPUT);
   Serial.begin(115200);
   SerialBT.begin("ESP32test");
-  // wiFiSetup(WIFI_STA);
-  // connectToWiFi();
-  // espClient.setInsecure();
-  // mqttSetup();
+  wiFiSetup(WIFI_STA);
+  connectToWiFi();
+  espClient.setInsecure();
+  mqttSetup();
   lcdSetup();
 
   // Add what I want on the screen
-  lcd.setCursor(0,0); // Col 0, row 0, redundant is lcd.clear() is called
+  lcd.setCursor(0,0); // Col 0, row 0, redundant as lcd.clear() is called
   lcd.print("Resistance:"); // 11 chars, 5 left
   lcd.setCursor(0,1);
   lcd.print("LED State:"); // 10 chars, 6 left
@@ -211,7 +243,7 @@ void loop() {
     }
     Serial.write(incomingChar);
   }
-
+  // incoming bluetooth messages
   if (message == "on"){
     digitalWrite(ledPin,HIGH);
     lcd.setCursor(10,1);
@@ -227,7 +259,7 @@ void loop() {
 
   // Non blocking loop
 
-  // client.loop(); // Checks for missed mqtt packets
+  client.loop(); // Checks for missed mqtt packets
 
   unsigned long currentTime = millis();
   if (currentTime - previousTime >=interval){
@@ -243,11 +275,18 @@ void loop() {
     lcd.print("     "); // clears last 5 char
     lcd.setCursor(11,0);
     lcd.print(String(potValue));
-
-
+    
+    // Update bluetooth connection status
+    lcd.setCursor(15,1);
+    if (SerialBT.hasClient()) {  
+      lcd.write(1);
+      Serial.println("✅ Phone is connected via Bluetooth!");
+    } else {
+      lcd.write(0);
+      Serial.println("❌ No Bluetooth connection.");
+    }
     // Publish to MQTT Broker
-    // publishData("home/resistance", potValue);  // Example topic and data
-    // delay(1000); 
+    publishData("home/resistance", potValue);  // Example topic and data
   }
 
 }
